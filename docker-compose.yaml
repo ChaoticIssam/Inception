@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mariadb:
+    build: 
+      context: ./mariadb
+      dockerfile: dockerfile
+    env_file:
+      - .env
+    volumes:
+      - mariadb:/var/lib/mysql
+    networks:
+      - inception
+    restart: on-failure
+
+
+  wordpress:
+    build:
+      context: ./wordpress
+      dockerfile: dockerfile
+    ports:
+      - "9000:9000"
+    env_file:
+      - .env
+    volumes:
+      - wordpress_data:/var/www/wordpress/
+    networks:
+      - inception
+    restart: on-failure
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    ports:
+      - "443:443"
+    depends_on:
+      - wordpress
+    volumes:
+      - ./nginx/default:/etc/nginx/conf.d
+      - wordpress_data:/var/www/wordpress/
+    networks:
+      - inception
+    restart: on-failure
+
+volumes:
+  mariadb:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/Users/deimos/data/mariadb'
+  wordpress_data:
+      driver: local
+      driver_opts:
+        type: 'none'
+        o: 'bind'
+        device: '/Users/deimos/data/wordpress'
+
+networks:
+  inception:
+    name: inception
